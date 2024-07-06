@@ -1,17 +1,27 @@
 import {
 	Box,
 	Container,
-	Text,
-	Tabs,
-	TabList,
-	TabPanels,
 	Tab,
+	TabList,
 	TabPanel,
+	TabPanels,
+	Tabs,
+	Text,
 } from "@chakra-ui/react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Login from "../components/Authentication/Login";
 import Signup from "../components/Authentication/Signup";
 
 const Homepage = () => {
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		const user = localStorage.getItem("userInfo");
+		if (user) {
+			navigate("/chats");
+		}
+	}, [navigate]);
 	return (
 		<Container maxW="xl" centerContent>
 			<Box
