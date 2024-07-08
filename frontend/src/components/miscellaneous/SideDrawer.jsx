@@ -47,6 +47,10 @@ const SideDrawer = () => {
 
 	const toast = useToast();
 
+	const handleClose = () => {
+		setSearchResult([]);
+		onClose();
+	};
 	const handleSearch = async (e) => {
 		e.preventDefault();
 		if (!search) {
@@ -78,11 +82,12 @@ const SideDrawer = () => {
 			// when user is not found
 			if (data.length === 0) {
 				toast({
-					title: "User not found",
-					status: "warning",
+					title: "No User Found",
+					description: "User with this name does not exist",
+					status: "info",
 					duration: 5000,
 					isClosable: true,
-					position: "top",
+					position: "top-left",
 				});
 			}
 		} catch (_error) {
@@ -115,10 +120,10 @@ const SideDrawer = () => {
 
 			setSelectedChat(data);
 			setLoadingChat(false);
-			onClose();
+			handleClose();
 		} catch (error) {
 			toast({
-				title: "Error in chat",
+				title: "Error fetching the chat",
 				description: error.message,
 				status: "error",
 				duration: 5000,
@@ -141,7 +146,7 @@ const SideDrawer = () => {
 			>
 				<Tooltip label="Search users to chat" hasArrow placement="bottom-end">
 					<Button variant="ghost" onClick={onOpen}>
-						<i className="fa-solid fa-magnifying-glass"></i>
+						<i className="fa-solid fa-magnifying-glass" />
 						<Text display={{ base: "none", md: "flex" }} px="4">
 							Search Users
 						</Text>
@@ -177,7 +182,7 @@ const SideDrawer = () => {
 					</Menu>
 				</div>
 			</Box>
-			<Drawer placement="left" onClose={onClose} isOpen={isOpen}>
+			<Drawer placement="left" onClose={handleClose} isOpen={isOpen}>
 				<DrawerOverlay />
 				<DrawerContent>
 					<DrawerHeader borderBottomWidth="1px">Search Users</DrawerHeader>
