@@ -68,7 +68,7 @@ const Login = () => {
 			navigate("/chats");
 		} catch (error) {
 			toast({
-				title: "Error Occured!",
+				title: "No Account Found",
 				description: error.response.data.detail,
 				status: "error",
 				duration: 5000,
