@@ -15,10 +15,10 @@ import { getSender, getSenderFull } from "../config/ChatLogic";
 import ProfileModal from "./miscellaneous/ProfileModal";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import "./styles.css";
-import ScrollableChat from "./ScrollableChat";
+import Lottie from "lottie-react";
 import io from "socket.io-client";
-import Lottie from "react-lottie";
 import animationData from "../animations/typinghand.json";
+import ScrollableChat from "./ScrollableChat";
 
 const ENDPOINT = "http://localhost:5000";
 
@@ -33,17 +33,40 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 	const [typing, setTyping] = useState(false);
 	const [isTyping, setIsTyping] = useState(false);
 
-	const defaultOptions = {
-		loop: true,
-		autoplay: true,
-		animationData: animationData,
-		rendererSettings: {
-			preserveAspectRatio: "xMidYMid slice",
-		},
-	};
-
 	const toast = useToast();
-	const { user, selectedChat, setSelectedChat } = ChatState();
+	const { user, selectedChat, setSelectedChat, notification, setNotification } =
+		ChatState();
+	ChatState();
+
+	const markNotificationAsRead = async () => {
+		try {
+			const config = {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			};
+			await axios.put(
+				`/api/notification/markAsRead/${selectedChat._id}`,
+				{},
+				config,
+			);
+			// Clear notifications from the selected user
+			setNotification((prevNotifications) =>
+				prevNotifications.filter((n) => n.chat._id !== selectedChat._id),
+			);
+
+			// Update localStorage
+			localStorage.setItem(
+				"notifications",
+				JSON.stringify(
+					notification.filter((n) => n.chat._id !== selectedChat._id),
+				),
+			);
+			// fetchNotifications();
+		} catch (error) {
+			console.error("Error marking notifications as read:", error);
+		}
+	};
 
 	const fetchMessages = async () => {
 		if (!selectedChat) return;
@@ -115,50 +138,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 			}
 		}
 	};
-	useEffect(() => {
-		socket = io(ENDPOINT);
-		socket.emit("setup", user);
-		socket.on("connected", () => setSocketConnected(true));
-		socket.on("typing", () => setIsTyping(true));
-		socket.on("stop typing", () => setIsTyping(false));
-	}, []);
 
-	useEffect(() => {
-		fetchMessages();
-
-		selectedChatCompare = selectedChat;
-	}, [selectedChat]);
-
-	useEffect(() => {
-		socket.on("message recieved", (newMessageRecieved) => {
-			if (
-				!selectedChatCompare ||
-				selectedChatCompare._id !== newMessageRecieved.chat._id
-			) {
-				// if (!selectedChatCompare.isGroupChat) {
-				// 	toast({
-				// 		title: "New Message",
-				// 		description: `${newMessageRecieved.content}`,
-				// 		status: "info",
-				// 		duration: 5000,
-				// 		isClosable: true,
-				// 		position: "bottom",
-				// 	});
-				// } else {
-				// 	toast({
-				// 		title: "New Message",
-				// 		description: `${newMessageRecieved.content}`,
-				// 		status: "info",
-				// 		duration: 5000,
-				// 		isClosable: true,
-				// 		position: "bottom",
-				// 	});
-				// }
-			} else {
-				setMessages([...messages, newMessageRecieved]);
-			}
-		});
-	});
 	const typingHandler = (e) => {
 		setNewMessage(e.target.value);
 
@@ -180,6 +160,69 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 			}
 		}, timerLength);
 	};
+
+	useEffect(() => {
+		if (selectedChat) {
+			markNotificationAsRead();
+		}
+	}, [selectedChat]);
+
+	useEffect(() => {
+		socket = io(ENDPOINT);
+		socket.emit("setup", user);
+		socket.on("connected", () => setSocketConnected(true));
+		socket.on("typing", () => setIsTyping(true));
+		socket.on("stop typing", () => setIsTyping(false));
+	}, []);
+
+	useEffect(() => {
+		socket.on("new notification", (newNotification) => {
+			setNotification((prev) => [newNotification, ...prev]);
+		});
+
+		return () => {
+			socket.off("new notification");
+		};
+	}, []);
+
+	useEffect(() => {
+		fetchMessages();
+
+		selectedChatCompare = selectedChat;
+	}, [selectedChat]);
+
+	useEffect(() => {
+		socket.on("message received", (newMessageReceived) => {
+			if (
+				!selectedChatCompare ||
+				selectedChatCompare._id !== newMessageReceived.chat._id
+			) {
+				setNotification((prevNotifications) => {
+					const newNotification = newMessageReceived;
+					const isDuplicate = prevNotifications.some(
+						(n) => n._id === newNotification._id,
+					);
+					if (!isDuplicate) {
+						const updatedNotifications = [
+							newNotification,
+							...prevNotifications,
+						];
+						localStorage.setItem(
+							"notifications",
+							JSON.stringify(updatedNotifications),
+						);
+						return updatedNotifications;
+					}
+					return prevNotifications;
+				});
+			} else {
+				setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
+			}
+		});
+		return () => {
+			socket.off("message received");
+		};
+	});
 
 	return (
 		<>
@@ -203,6 +246,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 						{messages &&
 							(!selectedChat.isGroupChat ? (
 								<>
+									{/* {console.log(
+										"Rendering sender name",
+										user,
+										selectedChat.users,
+									)} */}
 									{getSender(user, selectedChat.users)}
 									<ProfileModal
 										user={getSenderFull(user, selectedChat.users)}
@@ -246,10 +294,20 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
 						<FormControl onKeyDown={sendMessage} isRequired mt={3}>
 							{isTyping ? (
-								<div>
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "center",
+										alignItems: "center",
+										height: "40px",
+										width: "100%",
+										maxWidth: "300px",
+										margin: "0 auto",
+									}}
+								>
 									<Lottie
-										options={defaultOptions}
-										width={60}
+										animationData={animationData}
+										style={{ width: 100 }}
 										// style={{ marginBottom: 15, marginLeft: 0 }}
 									/>
 								</div>
