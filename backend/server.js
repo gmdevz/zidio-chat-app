@@ -7,6 +7,7 @@ const chatRoutes = require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
+const path = require("node:path");
 
 dotenv.config();
 connectDB();
@@ -15,15 +16,26 @@ const app = express();
 // to accept json data
 app.use(express.json());
 
-app.get("/", (req, res) => {
-	res.send("API is Running");
-	res.json({ message: "ITS WORKING" });
-});
-
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/notification", notificationRoutes);
+
+// ----------------Deployment----------------
+const __dirname1 = path.resolve();
+if (process.env.NODE_ENV === "production") {
+	app.use(express.static(path.join(__dirname1, "/frontend/dist")));
+
+	app.get("*", (req, res) => {
+		res.sendFile(path.resolve(__dirname1, "frontend/dist", "index.html"));
+	});
+} else {
+	app.get("/", (req, res) => {
+		res.send("API is Running");
+	});
+}
+
+// ----------------Deployment----------------
 
 app.use(notFound);
 app.use(errorHandler);

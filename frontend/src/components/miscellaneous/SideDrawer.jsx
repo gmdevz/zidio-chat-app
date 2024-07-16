@@ -222,10 +222,11 @@ const SideDrawer = () => {
 							{/* <NotificationBadge
 								count={notification.length}
 								effect={Effect.SCALE}
-							/> */}
+							/>
+							<BellIcon fontSize="2xl" m={1} /> */}
 							<Box position="relative" display="inline-block">
 								<BellIcon fontSize="2xl" m={1} />
-								{notification.length > 0 && (
+								{notification.length > 0 ? (
 									<Box
 										position="absolute"
 										top="0px"
@@ -234,9 +235,28 @@ const SideDrawer = () => {
 										height="8px"
 										backgroundColor="red"
 										borderRadius="50%"
+										animation="pulse 1s infinite"
+										sx={{
+											"@keyframes pulse": {
+												"0%": {
+													transform: "scale(0.95)",
+													boxShadow: "0 0 0 0 rgba(255, 0, 0, 0.7)",
+												},
+												"70%": {
+													transform: "scale(1)",
+													boxShadow: "0 0 0 10px rgba(255, 0, 0, 0)",
+												},
+												"100%": {
+													transform: "scale(0.95)",
+													boxShadow: "0 0 0 0 rgba(255, 0, 0, 0)",
+												},
+											},
+										}}
 									/>
+								) : (
+									""
 								)}
-							</Box>{" "}
+							</Box>
 						</MenuButton>
 						<MenuList pl={2}>
 							{!notification.length && "No New Messages"}
