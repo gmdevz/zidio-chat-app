@@ -28,8 +28,6 @@ import ChatLoading from "../ChatLoading";
 import UserListItem from "../UserAvatar/UserListItem";
 import ProfileModal from "./ProfileModal";
 import { getSender } from "../../config/ChatLogic";
-import NotificationBadge from "react-notification-badge";
-import { Effect } from "react-notification-badge";
 
 const SideDrawer = () => {
 	const [search, setSearch] = useState("");
@@ -221,24 +219,24 @@ const SideDrawer = () => {
 				<div>
 					<Menu>
 						<MenuButton p={1}>
-							<NotificationBadge
+							{/* <NotificationBadge
 								count={notification.length}
 								effect={Effect.SCALE}
-							/>
-							<BellIcon fontSize="2xl" m={1} />
-							{/* {notification.length > 0 && (
-								<span
-									style={{
-										backgroundColor: "red",
-										borderRadius: "50%",
-										padding: "2px 6px",
-										color: "white",
-										fontSize: "12px",
-									}}
-								>
-									{notification.length}
-								</span>
-							)} */}
+							/> */}
+							<Box position="relative" display="inline-block">
+								<BellIcon fontSize="2xl" m={1} />
+								{notification.length > 0 && (
+									<Box
+										position="absolute"
+										top="0px"
+										right="5px"
+										width="8px"
+										height="8px"
+										backgroundColor="red"
+										borderRadius="50%"
+									/>
+								)}
+							</Box>{" "}
 						</MenuButton>
 						<MenuList pl={2}>
 							{!notification.length && "No New Messages"}
