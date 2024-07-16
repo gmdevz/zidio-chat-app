@@ -1,3 +1,5 @@
+import { useToast } from "@chakra-ui/react";
+import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -7,8 +9,55 @@ const ChatProvider = ({ children }) => {
 	const [user, setUser] = useState();
 	const [selectedChat, setSelectedChat] = useState();
 	const [chats, setChats] = useState([]);
+	const [notification, setNotification] = useState([]);
 
 	const navigate = useNavigate();
+	const toast = useToast();
+
+	const fetchNotifications = async () => {
+		if (!user) return;
+
+		try {
+			const config = {
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${user.token}`,
+				},
+			};
+
+			const { data } = await axios.get("/api/notification", config);
+			setNotification(data);
+			localStorage.setItem("notifications", JSON.stringify(data));
+		} catch (error) {
+			toast({
+				title: "Error Occured!",
+				description: "Failed to load notifications",
+				status: "error",
+				duration: 5000,
+				isClosable: true,
+				position: "bottom-left",
+			});
+		}
+	};
+
+	useEffect(() => {
+		if (notification.length > 0) {
+			localStorage.setItem("notifications", JSON.stringify(notification));
+		}
+	}, [notification]);
+
+	// useEffect(() => {
+	// 	const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+	// 	setUser(userInfo);
+
+	// 	if (userInfo) {
+	// 		const storedNotifications = JSON.parse(
+	// 			localStorage.getItem("notifications") || "[]",
+	// 		);
+	// 		setNotification(storedNotifications);
+	// 		fetchNotifications();
+	// 	}
+	// }, []);
 
 	useEffect(() => {
 		const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -18,11 +67,28 @@ const ChatProvider = ({ children }) => {
 		if (!userInfo) {
 			navigate("/");
 		}
+
+		// fetch notifications from local storage
+		const storedNotifications = JSON.parse(
+			localStorage.getItem("notifications") || "[]",
+		);
+		setNotification(storedNotifications);
+		fetchNotifications();
 	}, [navigate]);
 
 	return (
 		<ChatContext.Provider
-			value={{ user, setUser, selectedChat, setSelectedChat, chats, setChats }}
+			value={{
+				user,
+				setUser,
+				selectedChat,
+				setSelectedChat,
+				chats,
+				setChats,
+				notification,
+				setNotification,
+				fetchNotifications,
+			}}
 		>
 			{children}
 		</ChatContext.Provider>
