@@ -24,10 +24,10 @@ app.use("/api/notification", notificationRoutes);
 // ----------------Deployment----------------
 const __dirname1 = path.resolve();
 if (process.env.NODE_ENV === "production") {
-	app.use(express.static(path.join(__dirname1, "frontend")));
+	app.use(express.static(path.join(__dirname1, "frontend/dist")));
 
 	app.get("*", (req, res) => {
-		res.sendFile(path.resolve(__dirname1, "frontend", "index.html"));
+		res.sendFile(path.resolve(__dirname1, "frontend", "dist", "index.html"));
 	});
 } else {
 	app.get("/", (req, res) => {
@@ -50,9 +50,7 @@ const server = app.listen(
 const io = require("socket.io")(server, {
 	pingTimeout: 60000,
 	cors: {
-		origin: ["http://localhost:5173", "https://zidio-chat-app.vercel.app/"], // for development
-		method: ["GET", "POST", "PUT", "DELETE"],
-		credentials: true,
+		origin: "http://localhost:5173",
 	},
 });
 
