@@ -1,9 +1,9 @@
 {
 	"name": "zidio-chat-app",
 	"version": "1.0.0",
-	"main": "index.js",
+	"main": "server.js",
 	"scripts": {
-		"start": "nodemon index.js"
+		"start": "nodemon ./backend/server.js"
 	},
 	"author": "gmdevz",
 	"license": "ISC",
