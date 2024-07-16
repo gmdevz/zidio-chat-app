@@ -39,7 +39,7 @@ const io = require("socket.io")(server, {
 	pingTimeout: 60000,
 	cors: {
 		origin: ["http://localhost:5173", "https://zidio-chat-app.vercel.app/"], // for development
-		method: ["GET", "POST"],
+		method: ["GET", "POST", "PUT", "DELETE"],
 		credentials: true,
 	},
 });
