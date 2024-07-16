@@ -37,7 +37,7 @@ const server = app.listen(
 const io = require("socket.io")(server, {
 	pingTimeout: 60000,
 	cors: {
-		origin: "http://localhost:5173", "https://zidio-chat-app.vercel.app/"
+		origin: "http://localhost:5173", ""
 	},
 });
 
