@@ -5,6 +5,7 @@ const colors = require("colors");
 const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 dotenv.config();
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
+app.use("/api/notification", notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -59,17 +61,21 @@ io.on("connection", (socket) => {
 		socket.in(room).emit("stop typing");
 	});
 
-	socket.on("new message", (newMessageRecieved) => {
-		const chat = newMessageRecieved.chat;
+	socket.on("new message", (newMessageReceived) => {
+		const chat = newMessageReceived.chat;
 
 		if (!chat.users) return console.log("chat.users not defined");
 
-		const userId = newMessageRecieved.sender._id;
+		const userId = newMessageReceived.sender._id;
 
 		chat.users.forEach((user) => {
 			if (user._id == userId) return;
-			socket.to(user._id).emit("message recieved", newMessageRecieved);
+			socket.to(user._id).emit("message received", newMessageReceived);
 		});
+	});
+
+	socket.on("new notification", (chatId) => {
+		socket.in(chatId).emit("notification received", chatId);
 	});
 
 	socket.off("setup", () => {
