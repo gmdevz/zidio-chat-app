@@ -9,11 +9,6 @@
 			"src": "frontend/package.json",
 			"use": "@vercel/static-build",
 			"config": { "distDir": "dist" }
-		},
-		{
-			"src": "frontend/package.json",
-			"use": "@vercel/node",
-			"config": { "buildCommand": "npm install --force && npm run build" }
 		}
 	],
 	"routes": [

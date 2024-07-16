@@ -5,9 +5,10 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
-		"build": "npm install --force && vite build",
+		"build": "vite build",
 		"lint": "biome lint .",
-		"preview": "vite preview"
+		"preview": "vite preview",
+		"vercel-build": "npm install --force && npm run build"
 	},
 	"dependencies": {
 		"@chakra-ui/icons": "^2.1.1",
