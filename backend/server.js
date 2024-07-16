@@ -17,6 +17,7 @@ app.use(express.json());
 
 app.get("/", (req, res) => {
 	res.send("API is Running");
+	res.json("ITS WORKING");
 });
 
 app.use("/api/user", userRoutes);
