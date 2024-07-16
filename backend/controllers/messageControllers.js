@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const Message = require("../models/messageModel");
 const User = require("../models/userModel");
 const Chat = require("../models/chatModel");
+const Notification = require("../models/notificationModel");
 
 const sendMessage = asyncHandler(async (req, res) => {
 	const { content, chatId } = req.body;
@@ -29,6 +30,19 @@ const sendMessage = asyncHandler(async (req, res) => {
 
 		await Chat.findByIdAndUpdate(req.body.chatId, {
 			latestMessage: message,
+		});
+
+		// Create notifications for all users in the chat except the sender
+		const chat = await Chat.findById(chatId);
+		chat.users.forEach(async (userId) => {
+			if (userId.toString() !== req.user._id.toString()) {
+				await Notification.create({
+					sender: req.user._id,
+					recipient: userId,
+					content: `New message from ${req.user.name}`,
+					chat: chatId,
+				});
+			}
 		});
 
 		res.json(message);
