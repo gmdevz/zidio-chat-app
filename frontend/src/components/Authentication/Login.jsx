@@ -12,6 +12,7 @@ import {
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ChatState } from "../../Context/ChatProvider";
 
 const Login = () => {
 	const [show, setShow] = useState(false);
@@ -22,6 +23,8 @@ const Login = () => {
 	const navigate = useNavigate();
 
 	const toast = useToast();
+
+	const { setUser } = ChatState();
 
 	const handleClick = () => setShow(!show);
 	const submitHandler = async () => {
@@ -79,6 +82,28 @@ const Login = () => {
 		}
 	};
 
+	const handleGuestLogin = async () => {
+		try {
+			const response = await axios.post("/api/user/guestlogin");
+			if (response?.data) {
+				localStorage.setItem("userInfo", JSON.stringify(response.data));
+				setUser(response.data);
+				navigate("/chats");
+			} else {
+				throw new Error("Invalid response from server");
+			}
+		} catch (error) {
+			toast({
+				title: "Error Occurred!",
+				description: error.message || "An unexpected error occurred",
+				status: "error",
+				duration: 5000,
+				isClosable: true,
+				position: "bottom",
+			});
+		}
+	};
+
 	return (
 		<VStack>
 			<FormControl id="email" isRequired>
@@ -123,12 +148,13 @@ const Login = () => {
 				variant="solid"
 				colorScheme="red"
 				width="100%"
-				onClick={() => {
-					setEmail("guest@example.com");
-					setPassword("123456");
-				}}
+				onClick={handleGuestLogin}
+				// onClick={() => {
+				// 	setEmail("guest@example.com");
+				// 	setPassword("123456");
+				// }}
 			>
-				Get Guest User Credentials
+				Login as Guest
 			</Button>
 		</VStack>
 	);
