@@ -24,10 +24,11 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChatState } from "../../Context/ChatProvider";
+import { getSender } from "../../config/ChatLogic";
 import ChatLoading from "../ChatLoading";
 import UserListItem from "../UserAvatar/UserListItem";
 import ProfileModal from "./ProfileModal";
-import { getSender } from "../../config/ChatLogic";
+import { debounce } from "lodash";
 
 const SideDrawer = () => {
 	const [search, setSearch] = useState("");
@@ -48,8 +49,29 @@ const SideDrawer = () => {
 
 	const { isOpen, onOpen, onClose } = useDisclosure();
 
-	const logoutHandler = () => {
+	const logoutHandler = async () => {
+		const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+		if (userInfo?.email.startsWith("guest_")) {
+			try {
+				await axios.delete("/api/user/guestlogout", {
+					headers: {
+						Authorization: `Bearer ${userInfo.token}`,
+					},
+				});
+				console.log("Guest user logged out successfully");
+			} catch (_error) {
+				toast({
+					title: "Error logging out",
+					status: "error",
+					duration: 5000,
+					isClosable: true,
+					position: "bottom",
+				});
+			}
+		}
 		localStorage.removeItem("userInfo");
+		localStorage.removeItem("notifications");
+
 		navigate("/");
 	};
 	// const fetchNotifications = async () => {
@@ -84,46 +106,26 @@ const SideDrawer = () => {
 		setSearchResult([]);
 		onClose();
 	};
-	const handleSearch = async (e) => {
-		e.preventDefault();
-		if (!search) {
-			toast({
-				title: "Please enter something in search",
-				status: "warning",
-				duration: 5000,
-				isClosable: true,
-				position: "top-left",
-			});
+	const handleSearch = debounce(async (value) => {
+		if (!value) {
+			setSearchResult([]);
 			return;
 		}
-
 		try {
 			setLoading(true);
-
 			const config = {
 				headers: {
-					"Content-Type": "application/json",
 					Authorization: `Bearer ${user.token}`,
 				},
 			};
-
-			const { data } = await axios.get(`/api/user?search=${search}`, config);
-
-			setLoading(false);
-			setSearchResult(data);
-
-			// when user is not found
+			const { data } = await axios.get(`/api/user?search=${value}`, config);
 			if (data.length === 0) {
-				toast({
-					title: "No User Found",
-					description: "User with this name does not exist",
-					status: "info",
-					duration: 5000,
-					isClosable: true,
-					position: "top-left",
-				});
+				setSearchResult([{ _id: "not-found", name: "No user found" }]);
+			} else {
+				setSearchResult(data);
 			}
-		} catch (_error) {
+			setLoading(false);
+		} catch (error) {
 			toast({
 				title: "Error in search",
 				description: "Failed to load the search results",
@@ -132,6 +134,33 @@ const SideDrawer = () => {
 				isClosable: true,
 				position: "bottom-left",
 			});
+			setLoading(false);
+		}
+	}, 300);
+	const fetchOnlineUsers = async () => {
+		try {
+			setLoading(true);
+			const config = {
+				headers: {
+					Authorization: `Bearer ${user.token}`,
+				},
+			};
+			const { data } = await axios.get("/api/user/online", config);
+			const onlineUsers = data.filter(
+				(onlineUser) => onlineUser._id !== user._id,
+			);
+			setSearchResult(onlineUsers);
+			setLoading(false);
+		} catch (error) {
+			toast({
+				title: "Error Occurred!",
+				description: "Failed to load online users",
+				status: "error",
+				duration: 5000,
+				isClosable: true,
+				position: "bottom-left",
+			});
+			setLoading(false);
 		}
 	};
 
@@ -181,7 +210,7 @@ const SideDrawer = () => {
 			setNotification((prevNotifications) =>
 				prevNotifications.filter((n) => n._id !== notif._id),
 			);
-		} catch (error) {
+		} catch (_error) {
 			toast({
 				title: "Error Occured!",
 				description: "Failed to mark notification as read",
@@ -305,20 +334,31 @@ const SideDrawer = () => {
 								placeholder="Search by name or email"
 								mr={2}
 								value={search}
-								onChange={(e) => setSearch(e.target.value)}
+								onChange={(e) => {
+									setSearch(e.target.value);
+									handleSearch(e.target.value);
+								}}
 							/>
-							<Button onClick={handleSearch}>Go</Button>
+							<Button onClick={fetchOnlineUsers} ml={2}>
+								<i className="fa-solid fa-users" />
+							</Button>
 						</Box>
 						{loading ? (
 							<ChatLoading />
 						) : (
-							searchResult?.map((user) => (
-								<UserListItem
-									key={user._id}
-									user={user}
-									handleFunction={() => accessChat(user._id)}
-								/>
-							))
+							searchResult?.map((user) =>
+								user._id === "not-found" ? (
+									<Text key="not-found" p={2}>
+										{user.name}
+									</Text>
+								) : (
+									<UserListItem
+										key={user._id}
+										user={user}
+										handleFunction={() => accessChat(user._id)}
+									/>
+								),
+							)
 						)}
 						{loadingChat && <Spinner ml="auto" display="flex" />}
 					</DrawerBody>
