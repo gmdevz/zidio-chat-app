@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"main": "server.js",
 	"scripts": {
-		"start": "node backend/seedData.js && node backend/server.js",
+		"start": "node backend/seedData.js && nodemon backend/server.js",
 		"server": "node backend/seedData.js && nodemon backend/server.js  ",
 		"build": "npm install && npm install --prefix frontend --production=false && npm run build --prefix frontend"
 	},
