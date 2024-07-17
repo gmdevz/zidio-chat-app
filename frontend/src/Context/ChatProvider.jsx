@@ -2,6 +2,7 @@ import { useToast } from "@chakra-ui/react";
 import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { socket } from "../config/socketConfig";
 
 const ChatContext = createContext();
 
@@ -17,26 +18,26 @@ const ChatProvider = ({ children }) => {
 	const fetchNotifications = async () => {
 		if (!user) return;
 
-		try {
-			const config = {
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${user.token}`,
-				},
-			};
-
-			const { data } = await axios.get("/api/notification", config);
-			setNotification(data);
-			localStorage.setItem("notifications", JSON.stringify(data));
-		} catch (error) {
-			toast({
-				title: "Error Occured!",
-				description: "Failed to load notifications",
-				status: "error",
-				duration: 5000,
-				isClosable: true,
-				position: "bottom-left",
-			});
+		const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+		if (userInfo && !userInfo.email.startsWith("guest_")) {
+			try {
+				const config = {
+					headers: {
+						Authorization: `Bearer ${userInfo.token}`,
+					},
+				};
+				const { data } = await axios.get("/api/notification", config);
+				setNotification(data);
+			} catch (_error) {
+				toast({
+					title: "Error Occured!",
+					description: "Failed to load notifications",
+					status: "error",
+					duration: 5000,
+					isClosable: true,
+					position: "bottom-left",
+				});
+			}
 		}
 	};
 
@@ -75,6 +76,23 @@ const ChatProvider = ({ children }) => {
 		setNotification(storedNotifications);
 		fetchNotifications();
 	}, [navigate]);
+	socket.on("guestUserDeleted", ({ userId, chatIds, notificationsDeleted }) => {
+		setChats((prevChats) =>
+			prevChats.filter(
+				(chat) =>
+					!chatIds.includes(chat._id) &&
+					!chat.users.some((user) => user._id === userId),
+			),
+		);
+		if (notificationsDeleted) {
+			setNotification((prevNotifications) =>
+				prevNotifications.filter(
+					(n) => n.sender._id !== userId && n.recipient._id !== userId,
+				),
+			);
+		}
+		setSelectedChat(null);
+	});
 
 	return (
 		<ChatContext.Provider

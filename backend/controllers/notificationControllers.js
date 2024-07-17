@@ -29,11 +29,18 @@ const createNotification = asyncHandler(async (req, res) => {
 });
 
 const fetchNotifications = asyncHandler(async (req, res) => {
-	const notifications = await Notification.find({ user: req.user._id })
-		.populate("chat")
-		.populate("sender")
-		.sort({ createdAt: -1 });
-	res.json(notifications);
+	try {
+		const notifications = await Notification.find({ user: req.user._id })
+			.populate("chat")
+			.populate("sender")
+			.sort({ createdAt: -1 });
+		res.json(notifications);
+	} catch (error) {
+		console.error("Error fetching notifications:", error);
+		res
+			.status(500)
+			.json({ message: "Failed to fetch notifications", error: error.message });
+	}
 });
 
 const markNotificationAsRead = asyncHandler(async (req, res) => {
