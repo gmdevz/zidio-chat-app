@@ -16,13 +16,15 @@ import ProfileModal from "./miscellaneous/ProfileModal";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import "./styles.css";
 import Lottie from "lottie-react";
-import io from "socket.io-client";
+import { useNavigate } from "react-router-dom";
+// import io from "socket.io-client";
 import animationData from "../animations/typinghand.json";
 import ScrollableChat from "./ScrollableChat";
+import { socket } from "../config/socketConfig";
 
-const ENDPOINT = "http://localhost:5000";
+// const ENDPOINT = "http://192.168.100.2:5000";
 
-let socket;
+// let socket;
 let selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -37,6 +39,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 	const { user, selectedChat, setSelectedChat, notification, setNotification } =
 		ChatState();
 	ChatState();
+
+	const navigate = useNavigate();
 
 	const markNotificationAsRead = async () => {
 		try {
@@ -96,6 +100,11 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 				isClosable: true,
 				position: "bottom",
 			});
+			// Redirect to home if user no longer exists
+			// if (error.response && error.response.status === 401) {
+			localStorage.removeItem("userInfo");
+			navigate("/");
+			// }
 		}
 	};
 
@@ -168,7 +177,21 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 	}, [selectedChat]);
 
 	useEffect(() => {
-		socket = io(ENDPOINT);
+		socket.on("updateChats", (deletedUserId) => {
+			setChats((prevChats) =>
+				prevChats.filter(
+					(chat) => !chat.users.some((user) => user._id === deletedUserId),
+				),
+			);
+		});
+
+		return () => {
+			socket.off("updateChats");
+		};
+	}, []);
+
+	useEffect(() => {
+		socket;
 		socket.emit("setup", user);
 		socket.on("connected", () => setSocketConnected(true));
 		socket.on("typing", () => setIsTyping(true));
@@ -218,24 +241,41 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 			} else {
 				setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
 			}
+			// return () => {
+			// 	socket.off("message received");
+			// };
+		});
+		socket.on("user disconnected", (userId) => {
+			// Handle user disconnection
+			if (selectedChat?.users.some((user) => user._id === userId)) {
+				toast({
+					title: "User disconnected",
+					status: "info",
+					duration: 5000,
+					isClosable: true,
+					position: "bottom",
+				});
+				// Optionally, you can update the chat or redirect as needed
+			}
 		});
 		return () => {
 			socket.off("message received");
+			socket.off("user disconnected");
 		};
-	});
+	}, [selectedChat]);
 
 	return (
 		<>
-			{selectedChat ? (
+			{selectedChat?.users.every((user) => user._id) ? (
 				<>
 					<Text
 						fontSize={{ base: "28px", md: "30px" }}
 						pb={3}
 						px={2}
-						width="100%"
+						w="100%"
 						fontFamily="Work sans"
 						display="flex"
-						justifyContent={{ base: "space-between" }}
+						justifyContent={{ base: "center", md: "space-between" }}
 						alignItems="center"
 					>
 						<IconButton
@@ -274,9 +314,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 						p={3}
 						bg="#E8E8E8"
 						w="100%"
-						h="100%"
+						h={{ base: "calc(100vh - 110px)", md: "100%" }}
 						borderRadius="lg"
-						overflowY="hidden"
+						overflowY="auto"
 					>
 						{loading ? (
 							<Spinner
@@ -287,12 +327,25 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 								margin="auto"
 							/>
 						) : (
-							<div className="messages">
+							<div
+								style={{
+									display: "flex",
+									flexDirection: "column",
+									overflowY: "scroll",
+									scrollbarWidth: "none",
+									height: { base: "calc(100% - 60px)", md: "100%" },
+								}}
+							>
 								<ScrollableChat messages={messages} />
 							</div>
 						)}
 
-						<FormControl onKeyDown={sendMessage} isRequired mt={3}>
+						<FormControl
+							onKeyDown={sendMessage}
+							id="first-name"
+							isRequired
+							mt={3}
+						>
 							{isTyping ? (
 								<div
 									style={{
@@ -316,8 +369,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 								variant="filled"
 								bg="#E0E0E0"
 								placeholder="Enter a message.."
-								onChange={typingHandler}
 								value={newMessage}
+								onChange={typingHandler}
+								size={{ base: "sm", md: "md" }}
 							/>
 						</FormControl>
 					</Box>
