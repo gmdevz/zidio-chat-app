@@ -50,21 +50,23 @@ const accessChat = asyncHandler(async (req, res) => {
 
 const fetchChats = asyncHandler(async (req, res) => {
 	try {
-		Chat.find({
+		let chats = await Chat.find({
 			users: { $elemMatch: { $eq: req.user._id } },
 		})
 			.populate("users", "-password")
 			.populate("groupAdmin", "-password")
 			.populate("latestMessage")
-			.sort({ updatedAt: -1 })
-			.then(async (results) => {
-				results = await User.populate(results, {
-					path: "latestMessage.sender",
-					select: "name avatar email",
-				});
+			.sort({ updatedAt: -1 });
 
-				res.status(200).send(results);
-			});
+		chats = await User.populate(chats, {
+			path: "latestMessage.sender",
+			select: "name avatar email",
+		});
+
+		// Filter out chats with deleted users
+		chats = chats.filter((chat) => chat.users.every((user) => user._id));
+
+		res.status(200).send(chats);
 	} catch (error) {
 		res.status(400);
 		throw new Error(error.message);
