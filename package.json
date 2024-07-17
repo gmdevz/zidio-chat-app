@@ -5,7 +5,7 @@
 	"scripts": {
 		"start": "node backend/seedData.js && node backend/server.js",
 		"server": "node backend/seedData.js && nodemon backend/server.js  ",
-		"build": "npm install && npm install --prefix --production=false frontend && npm run build --prefix frontend"
+		"build": "npm install && npm install --prefix frontend --production=false && cd /frontend && npm run build"
 	},
 	"author": "gmdevz",
 	"license": "ISC",
