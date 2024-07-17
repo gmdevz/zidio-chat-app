@@ -8,21 +8,21 @@ const seedGuestUser = async () => {
 	try {
 		await mongoose.connect(process.env.MONGO_URI);
 
-		const guestUser = {
-			name: "Guest User",
-			email: "guest@example.com",
-			password: await bcrypt.hash("123456", 10),
-			avatar:
-				"https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
-		};
-
-		await User.create(guestUser);
-
-		console.log("Guest user seeded successfully");
-		process.exit();
+		const existingUser = await User.findOne({ email: "guest@example.com" });
+		if (!existingUser) {
+			const guestUser = new User({
+				name: "Guest User",
+				email: `guest_${Date.now()}@example.com`,
+				password: await bcrypt.hash("guestpassword", 10),
+				isGuest: true,
+			});
+			await guestUser.save();
+			console.log("Guest user seeded successfully");
+		} else {
+			console.log("Guest user already exists");
+		}
 	} catch (error) {
 		console.error("Error seeding guest user:", error);
-		process.exit(1);
 	}
 };
 
