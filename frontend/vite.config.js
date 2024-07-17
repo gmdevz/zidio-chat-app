@@ -11,8 +11,7 @@ export default defineConfig({
 				rewrite: (path) => path.replace(/^\/api/, "/api"),
 			},
 		},
-		port: process.env.PORT || 10000,
-		host: "0.0.0.0",
+		// host: true,
 	},
 	plugins: [react()],
 });
