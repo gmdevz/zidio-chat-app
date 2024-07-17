@@ -2,16 +2,19 @@ import { AddIcon } from "@chakra-ui/icons";
 import { Box, Button, Stack, Text, useToast } from "@chakra-ui/react";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChatState } from "../Context/ChatProvider";
 import { getSender } from "../config/ChatLogic";
 import ChatLoading from "./ChatLoading";
 import GroupChatModal from "./miscellaneous/GroupChatModal";
+import { socket } from "../config/socketConfig";
 
 const MyChats = ({ fetchAgain }) => {
 	const [loggedUser, setLoggedUser] = useState();
 	const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
 
 	const toast = useToast();
+	const _navigate = useNavigate();
 
 	const fetchChats = async () => {
 		try {
@@ -23,7 +26,10 @@ const MyChats = ({ fetchAgain }) => {
 			};
 
 			const { data } = await axios.get("/api/chat", config);
-			setChats(data);
+			const validChats = data.filter((chat) =>
+				chat.users.every((user) => user._id),
+			);
+			setChats(validChats);
 		} catch (_error) {
 			toast({
 				title: "Error Occured!",
@@ -36,9 +42,45 @@ const MyChats = ({ fetchAgain }) => {
 		}
 	};
 
+	// const handleChatSelection = (chat) => {
+	// 	if (chat.users.every((user) => user._id)) {
+	// 		setSelectedChat(chat);
+	// 	} else {
+	// 		// Handle invalid chat (e.g., show a message or remove it)
+	// 		toast({
+	// 			title: "Chat no longer available",
+	// 			status: "warning",
+	// 			duration: 5000,
+	// 			isClosable: true,
+	// 		});
+	// 		// Optionally remove the invalid chat from the list
+	// 		setChats((prevChats) => prevChats.filter((c) => c._id !== chat._id));
+	// 	}
+	// };
+	// useEffect(() => {
+	// 	const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+	// 	if (userInfo) {
+	// 		setUser(userInfo);
+	// 		fetchChats();
+	// 	} else {
+	// 		navigate("/");
+	// 	}
+	// }, [navigate]);
+
 	useEffect(() => {
 		setLoggedUser(JSON.parse(localStorage.getItem("userInfo")));
 		fetchChats();
+		socket.on("guestUserDeleted", (deletedUserId) => {
+			setChats((prevChats) =>
+				prevChats.filter(
+					(chat) => !chat.users.some((user) => user._id === deletedUserId),
+				),
+			);
+		});
+
+		return () => {
+			socket.off("guestUserDeleted");
+		};
 	}, [fetchAgain]);
 
 	return (
@@ -98,7 +140,7 @@ const MyChats = ({ fetchAgain }) => {
 				>
 					{chats ? (
 						<Stack overflowY="scroll">
-							{chats.map((chat) => (
+							{chats?.map((chat) => (
 								<Box
 									key={chat._id}
 									onClick={() => setSelectedChat(chat)}
