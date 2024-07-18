@@ -20,6 +20,7 @@ import { useState } from "react";
 import { ChatState } from "../../Context/ChatProvider";
 
 const ProfileModal = ({ user, children }) => {
+	const { user: currentUser } = ChatState();
 	const { isOpen, onOpen, onClose } = useDisclosure();
 	const toast = useToast();
 	const [newName, setNewName] = useState(user.name);
@@ -35,6 +36,23 @@ const ProfileModal = ({ user, children }) => {
 					Authorization: `Bearer ${userInfo.token}`,
 				},
 			};
+			// Check if the name is already taken
+			const checkResponse = await axios.get(
+				`/api/user/checkname/${newName}`,
+				config,
+			);
+			if (checkResponse.data.exists) {
+				toast({
+					title: "Name already taken",
+					description: "Please choose a different name",
+					status: "error",
+					duration: 5000,
+					isClosable: true,
+					position: "bottom",
+				});
+				return;
+			}
+
 			const { data } = await axios.put("/api/user/rename", { newName }, config);
 			setUser(data);
 			localStorage.setItem("userInfo", JSON.stringify(data));
@@ -98,14 +116,24 @@ const ProfileModal = ({ user, children }) => {
 							src={user.avatar}
 							alt={user.name}
 						/>
-						{isEditing ? (
-							<Input
-								value={newName}
-								onChange={(e) => setNewName(e.target.value)}
-								placeholder="Enter new name"
-								mt={4}
-								size={{ base: "sm", md: "md" }}
-							/>
+						{user._id === currentUser._id ? (
+							isEditing ? (
+								<Input
+									value={newName}
+									onChange={(e) => setNewName(e.target.value)}
+									placeholder="Enter new name"
+									mt={4}
+									size={{ base: "sm", md: "md" }}
+								/>
+							) : (
+								<Text
+									fontSize={{ base: "18px", md: "22px" }}
+									fontFamily="Work sans"
+									mt={4}
+								>
+									{user.name}
+								</Text>
+							)
 						) : (
 							<Text
 								fontSize={{ base: "18px", md: "22px" }}
@@ -124,34 +152,35 @@ const ProfileModal = ({ user, children }) => {
 						</Text>
 					</ModalBody>
 					<ModalFooter>
-						{isEditing ? (
-							<>
+						{user._id === currentUser._id &&
+							(isEditing ? (
+								<>
+									<Button
+										colorScheme="blue"
+										mr={3}
+										onClick={handleRename}
+										size={{ base: "sm", md: "md" }}
+									>
+										Save
+									</Button>
+									<Button
+										variant="ghost"
+										onClick={() => setIsEditing(false)}
+										size={{ base: "sm", md: "md" }}
+									>
+										Cancel
+									</Button>
+								</>
+							) : (
 								<Button
 									colorScheme="blue"
 									mr={3}
-									onClick={handleRename}
+									onClick={() => setIsEditing(true)}
 									size={{ base: "sm", md: "md" }}
 								>
-									Save
+									Edit Name
 								</Button>
-								<Button
-									variant="ghost"
-									onClick={() => setIsEditing(false)}
-									size={{ base: "sm", md: "md" }}
-								>
-									Cancel
-								</Button>
-							</>
-						) : (
-							<Button
-								colorScheme="blue"
-								mr={3}
-								onClick={() => setIsEditing(true)}
-								size={{ base: "sm", md: "md" }}
-							>
-								Edit Name
-							</Button>
-						)}
+							))}
 						<Button
 							colorScheme="blue"
 							mr={3}
