@@ -3,10 +3,12 @@ import {
 	Box,
 	FormControl,
 	IconButton,
-	Input,
 	Spinner,
 	Text,
+	Button,
 	useToast,
+	Textarea,
+	Flex,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -109,7 +111,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 	};
 
 	const sendMessage = async (event) => {
-		if (event.key === "Enter" && newMessage) {
+		if (
+			(event.type === "click" || (event.key === "Enter" && !event.shiftKey)) &&
+			newMessage.trim()
+		) {
 			socket.emit("stop typing", selectedChat._id);
 			event.preventDefault();
 
@@ -148,8 +153,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 		}
 	};
 
+	const autoResize = (e) => {
+		e.target.style.height = "inherit";
+		e.target.style.height = `${e.target.scrollHeight}px`;
+	};
+
 	const typingHandler = (e) => {
 		setNewMessage(e.target.value);
+		autoResize(e);
 
 		// Typing Indicator Logic
 		if (!socketConnected) return;
@@ -268,14 +279,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 		<>
 			{selectedChat?.users.every((user) => user._id) ? (
 				<>
-					<Text
-						fontSize={{ base: "28px", md: "30px" }}
+					<Flex
+						fontSize={{ base: "20px", md: "28px", lg: "30px" }}
 						pb={3}
 						px={2}
 						w="100%"
 						fontFamily="Work sans"
 						display="flex"
-						justifyContent={{ base: "center", md: "space-between" }}
+						justifyContent={{ base: "space-between", md: "space-between" }}
 						alignItems="center"
 					>
 						<IconButton
@@ -285,28 +296,31 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 						/>
 						{messages &&
 							(!selectedChat.isGroupChat ? (
-								<>
-									{/* {console.log(
-										"Rendering sender name",
-										user,
-										selectedChat.users,
-									)} */}
-									{getSender(user, selectedChat.users)}
+								<Flex alignItems="center" flexWrap="wrap">
+									<Text mr={2}>{getSender(user, selectedChat.users)}</Text>
 									<ProfileModal
 										user={getSenderFull(user, selectedChat.users)}
+										currentUser={user}
 									/>
-								</>
+								</Flex>
 							) : (
-								<>
-									{selectedChat.chatName.toUpperCase()}
+								<Flex alignItems="center" flexWrap="wrap">
+									<Text mr={2}>{selectedChat.chatName.toUpperCase()}</Text>
 									<UpdateGroupChatModal
 										fetchAgain={fetchAgain}
 										setFetchAgain={setFetchAgain}
 										fetchMessages={fetchMessages}
-									/>
-								</>
+									>
+										<IconButton
+											display={{ base: "flex", md: "none" }}
+											icon={<EditIcon />}
+											size="sm"
+										/>
+									</UpdateGroupChatModal>
+								</Flex>
 							))}
-					</Text>
+					</Flex>
+
 					<Box
 						display="flex"
 						flexDir="column"
@@ -346,33 +360,33 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 							isRequired
 							mt={3}
 						>
-							{isTyping ? (
-								<div
-									style={{
-										display: "flex",
-										justifyContent: "center",
-										alignItems: "center",
-										height: "40px",
-										width: "100%",
-										maxWidth: "300px",
-										margin: "0 auto",
-									}}
+							<Box display="flex" width="100%">
+								<Textarea
+									variant="filled"
+									bg="#E0E0E0"
+									placeholder="Enter a message.."
+									onChange={typingHandler}
+									value={newMessage}
+									fontSize={{ base: "sm", md: "md" }}
+									py={{ base: 2, md: 2 }}
+									px={{ base: 4, md: 4 }}
+									borderRadius="md"
+									rows={1}
+									resize="none"
+									overflow="hidden"
+									minHeight="40px"
+									maxHeight="200px"
+								/>
+								<Button
+									colorScheme="blue"
+									onClick={sendMessage}
+									ml={2}
+									px={{ base: 4, md: 6 }}
+									fontSize={{ base: "sm", md: "md" }}
 								>
-									<Lottie
-										animationData={animationData}
-										style={{ width: 100 }}
-										// style={{ marginBottom: 15, marginLeft: 0 }}
-									/>
-								</div>
-							) : null}
-							<Input
-								variant="filled"
-								bg="#E0E0E0"
-								placeholder="Enter a message.."
-								value={newMessage}
-								onChange={typingHandler}
-								size={{ base: "sm", md: "md" }}
-							/>
+									<i className="fa-regular fa-paper-plane" />
+								</Button>
+							</Box>
 						</FormControl>
 					</Box>
 				</>
