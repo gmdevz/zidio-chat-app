@@ -6,6 +6,7 @@ const {
 	guestLogin,
 	renameUser,
 	getOnlineUsers,
+	checkNameExists,
 	deleteGuestUser,
 } = require("../controllers/userControllers");
 const { protect } = require("../middleware/authMiddleware");
@@ -22,6 +23,8 @@ router.get("/online", protect, getOnlineUsers);
 router.post("/guestlogin", guestLogin);
 
 router.put("/rename", protect, renameUser);
+
+router.get("/checkname/:name", protect, checkNameExists);
 
 router.delete("/guestlogout", protect, deleteGuestUser);
 

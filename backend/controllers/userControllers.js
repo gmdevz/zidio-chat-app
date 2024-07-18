@@ -139,6 +139,12 @@ const renameUser = asyncHandler(async (req, res) => {
 	}
 });
 
+const checkNameExists = asyncHandler(async (req, res) => {
+	const name = req.params.name;
+	const user = await User.findOne({ name });
+	res.json({ exists: !!user });
+});
+
 const deleteGuestUser = asyncHandler(async (req, res) => {
 	const userId = req.user._id;
 
@@ -178,5 +184,6 @@ module.exports = {
 	getOnlineUsers,
 	guestLogin,
 	renameUser,
+	checkNameExists,
 	deleteGuestUser,
 };
