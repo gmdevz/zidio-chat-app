@@ -1,14 +1,14 @@
-import { ArrowBackIcon } from "@chakra-ui/icons";
+import { ArrowBackIcon, EditIcon } from "@chakra-ui/icons";
 import {
 	Box,
+	Button,
+	Flex,
 	FormControl,
 	IconButton,
 	Spinner,
 	Text,
-	Button,
-	useToast,
 	Textarea,
-	Flex,
+	useToast,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -21,8 +21,8 @@ import Lottie from "lottie-react";
 import { useNavigate } from "react-router-dom";
 // import io from "socket.io-client";
 import animationData from "../animations/typinghand.json";
-import ScrollableChat from "./ScrollableChat";
 import { socket } from "../config/socketConfig";
+import ScrollableChat from "./ScrollableChat";
 
 // const ENDPOINT = "http://192.168.100.2:5000";
 
@@ -35,7 +35,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 	const [newMessage, setNewMessage] = useState("");
 	const [socketConnected, setSocketConnected] = useState(false);
 	const [typing, setTyping] = useState(false);
-	const [isTyping, setIsTyping] = useState(false);
+	const [_isTyping, setIsTyping] = useState(false);
 
 	const toast = useToast();
 	const { user, selectedChat, setSelectedChat, notification, setNotification } =
@@ -277,7 +277,9 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
 	return (
 		<>
-			{selectedChat?.users.every((user) => user._id) ? (
+			{selectedChat &&
+			selectedChat.users &&
+			selectedChat.users.every((user) => user._id) ? (
 				<>
 					<Flex
 						fontSize={{ base: "20px", md: "28px", lg: "30px" }}
